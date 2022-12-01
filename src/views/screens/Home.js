@@ -114,7 +114,7 @@
 //             Juna Restaurant
 //           </Text>
 //         </View>
-     
+
 //       </View>
 //       <View
 //         style={{
@@ -216,8 +216,8 @@
 // export default Home;
 
 
-import React, { useEffect } from "react";
-import axios from 'axios' 
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import axios from 'axios'
 
 import {
     SafeAreaView,
@@ -229,9 +229,16 @@ import {
     FlatList
 } from "react-native";
 
+import {
+    BottomSheetModal,
+    BottomSheetModalProvider,
+} from '@gorhom/bottom-sheet';
+
 import { icons, images, SIZES, COLORS, FONTS } from '../../constants'
 import { apiGetFood } from "../../services/FoodService";
 import { apiGetCategories } from "../../services/CategoryService";
+import BottomSheetModalComponent from "../components/BottomSheetModal";
+import { rupiah } from "../../utils/currency";
 
 const Home = ({ navigation }) => {
 
@@ -240,6 +247,19 @@ const Home = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = React.useState(null)
     const [foodFiltered, setFoodFiltered] = React.useState([])
     const [foods, setFoods] = React.useState([])
+    const [detailFood, setDetailFood] = React.useState({})
+
+
+    // variables
+    const snapPoints = useMemo(() => ['80%'], []);
+    const bottomSheetModalRef = useRef(null);
+
+    const openModal = (item) => {
+        setDetailFood(item)
+        bottomSheetModalRef.current.present();
+    };
+
+
 
     const getAllFoods = async () => {
         try {
@@ -388,9 +408,8 @@ const Home = ({ navigation }) => {
         }
 
         return (
-            <View style={{ padding: SIZES.padding * 2 }}>
-                <Text style={{ ...FONTS.h1 }}>Main</Text>
-                <Text style={{ ...FONTS.h1 }}>Categories</Text>
+            <View style={{ padding: SIZES.padding * 2, marginTop: 10 }}>
+                <Text style={{ ...FONTS.h2 }}>Categories</Text>
 
                 <FlatList
                     data={categories}
@@ -407,10 +426,11 @@ const Home = ({ navigation }) => {
     function renderRestaurantList() {
         const renderItem = ({ item }) => (
             <TouchableOpacity
-                style={{ marginBottom: SIZES.padding * 6 }}
-                onPress={() => navigation.navigate("Restaurant", {
-                    item
-                })}
+                style={{ marginBottom: SIZES.padding * 6 , width: '50%', paddingHorizontal: 10 }}
+                // onPress={() => navigation.navigate("Restaurant", {
+                //     item
+                // })}
+                onPress={() => openModal(item)}
             >
                 {/* Image */}
                 <View
@@ -423,11 +443,11 @@ const Home = ({ navigation }) => {
                         resizeMode="cover"
                         style={{
                             width: "100%",
-                            height: 200,
+                            height: 150,
                             borderRadius: SIZES.radius
                         }}
                     />
-
+{/* 
                     <View
                         style={{
                             position: 'absolute',
@@ -443,11 +463,11 @@ const Home = ({ navigation }) => {
                         }}
                     >
                         <Text style={{ ...FONTS.h4 }}>{`${item.duration} min`}</Text>
-                    </View>
+                    </View> */}
                 </View>
 
                 {/* Restaurant Info */}
-                <Text style={{ ...FONTS.body2 }}>{item.name}</Text>
+                <Text style={{ ...FONTS.body3 }}>{item.name.length > 17 ? item.name.substring(0, 17) + '...' : item.name}</Text>
 
                 <View
                     style={{
@@ -455,8 +475,8 @@ const Home = ({ navigation }) => {
                         flexDirection: 'row'
                     }}
                 >
-                  
-                    <Text style={{ ...FONTS.body3 }}>{`Rp. ${item.price}`}</Text>
+
+                    <Text style={{ ...FONTS.body3 }}>{rupiah(item.price)}</Text>
 
                     {/* Categories */}
                     <View
@@ -501,6 +521,7 @@ const Home = ({ navigation }) => {
                 data={foodFiltered}
                 keyExtractor={item => `${item.id}`}
                 renderItem={renderItem}
+                numColumns={2}
                 contentContainerStyle={{
                     paddingHorizontal: SIZES.padding * 2,
                     paddingBottom: 30
@@ -510,11 +531,21 @@ const Home = ({ navigation }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            {renderHeader()}
-            {renderMainCategories()}
-            {renderRestaurantList()}
-        </SafeAreaView>
+        <BottomSheetModalProvider>
+            <SafeAreaView style={styles.container}>
+                {/* {renderHeader()} */}
+                {renderMainCategories()}
+                {renderRestaurantList()}
+            </SafeAreaView>
+            <BottomSheetModal
+                ref={bottomSheetModalRef}
+                index={0}
+                snapPoints={snapPoints}
+                style={styles.bottomSheet}
+            >
+                <BottomSheetModalComponent {...detailFood} />
+            </BottomSheetModal>
+        </BottomSheetModalProvider>
     )
 }
 
