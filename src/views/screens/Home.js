@@ -82,6 +82,12 @@ const Home = ({ navigation }) => {
             qty: 1,
             image: data.image
         }
+        // const itemcart = {
+        //     food: data,
+        //     quantity:  1,
+        //     price: data.price,
+        //     image: data.image
+        //   }
 
         try {
             const jsonValue = await AsyncStorage.getItem('@cart')
@@ -102,6 +108,25 @@ const Home = ({ navigation }) => {
         } catch (e) {
             console.log(e)
         }
+        // AsyncStorage.getItem('cart').then((datacart)=>{
+        //     if (datacart !== null) {
+        //       // We have data!!
+        //       const cart = JSON.parse(datacart)
+        //       cart.push(itemcart)
+        //       AsyncStorage.setItem('cart',JSON.stringify(cart));
+        //     }
+        //     else{
+        //       const cart  = []
+        //       cart.push(itemcart)
+        //       AsyncStorage.setItem('cart',JSON.stringify(cart));
+        //     }
+        //     alert("Add Cart")
+        //   })
+        //   .catch((err)=>{
+        //     alert(err)
+        //   })
+        
+
     }
     // function onSelectCategory(category) {
     //     //filter restaurant

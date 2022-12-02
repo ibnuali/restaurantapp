@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
-import {SafeAreaView, StyleSheet, View, Text, Image} from 'react-native';
-import {FlatList} from 'react-native-gesture-handler';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { SafeAreaView, StyleSheet, View, Text, Image, Dimensions } from 'react-native';
+import { FlatList } from 'react-native-gesture-handler';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { PrimaryButton } from '../components/Button';
 import { COLORS, icons } from '../../constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { rupiah } from '../../utils/currency';
+import { TouchableOpacity } from '@gorhom/bottom-sheet';
+import { apiCreateOrder } from '../../services/OrderService';
+const { width } = Dimensions.get("window")
 
 const Cart = (props) => {
 
@@ -18,47 +21,85 @@ const Cart = (props) => {
     }
     asyncWrapper();
   }, [])
-  
-  
-  const CartCard = ({item}) => {
+
+  const checkoutItems = async (items) => {
+    const dataOrder = {
+      items: items,
+      total: items.reduce((a, b) => a + (b.price * b.qty), 0),
+      orderDate: new Date()
+    }
+
+    await AsyncStorage.setItem('@orderItems', JSON.stringify(items));
+    await AsyncStorage.removeItem('@cart');
+    props.navigation.navigate('Order');
+  }
+
+  const onChangeIncrementQty = (item) => {
+    const newCartItems = cartItems.map((cartItem) => {
+      if (cartItem.id === item.id) { 
+        return {
+          ...cartItem,
+          qty: cartItem.qty + 1
+        }
+      }
+      return cartItem;
+    })
+    setCartItems(newCartItems);
+    AsyncStorage.setItem('@cart', JSON.stringify(newCartItems));
+  }
+
+  const onChangeDecrementQty = (item) => {
+    const newCartItems = cartItems.map((cartItem) => {
+      if (cartItem.id === item.id) {
+        return {
+          ...cartItem,
+          qty: cartItem.qty - 1
+        }
+      }
+      return cartItem;
+    })
+    setCartItems(newCartItems);
+    AsyncStorage.setItem('@cart', JSON.stringify(newCartItems));
+  }
+
+
+
+  const CartCard = ({ item }) => {
     return (
-      <View style={style.cartCard}>
-        <Image source={{uri: item.image}} style={{width: 100, height: 100, borderRadius: 10}} />
-        <View
-          style={{
-            height: 100,
-            marginLeft: 10,
-            paddingVertical: 20,
-            flex: 1,
-          }}>
-          <Text style={{fontWeight: 'bold', fontSize: 16}}>{item.name}</Text>
-          <Text style={{fontSize: 13, color: COLORS.grey}}>
-            {item.ingredients}
-          </Text>
-          <Text style={{fontSize: 17, fontWeight: 'bold'}}>{rupiah(item.price)}</Text>
-        </View>
-        <View style={{marginRight: 20, alignItems: 'center'}}>
-          <Text style={{fontWeight: 'bold', fontSize: 18}}> {item.qty} </Text>
-          <View style={style.actionBtn}>
-            <Text style={{fontSize: 20, color: COLORS.white}}>+</Text>
-            <Text style={{fontSize: 20, color: COLORS.white}}>-</Text>
+      <View style={{ width: width - 20, margin: 10, backgroundColor: 'transparent', flexDirection: 'row', borderBottomWidth: 2, borderColor: "#cccccc", paddingBottom: 10 }}>
+        <Image resizeMode={"contain"} style={{ width: width / 3, height: width / 3 }} source={{ uri: item.image }} />
+        <View style={{ flex: 1, backgroundColor: 'trangraysparent', padding: 10, justifyContent: "space-between" }}>
+          <View>
+            <Text style={{ fontWeight: "bold", fontSize: 18 }}>{item.name}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ fontWeight: 'bold', color: "#33c37d", fontSize: 18 }}>{rupiah(item.price*item.qty)}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={() => onChangeDecrementQty(item,item.qty)}>
+                <Icon name="ios-remove-circle" size={35} color={"#33c37d"} />
+              </TouchableOpacity>
+              <Text style={{ paddingHorizontal: 8, fontWeight: 'bold', fontSize: 18 }}>{item.qty}</Text>
+              <TouchableOpacity onPress={() => onChangeIncrementQty(item,item.qty)}>
+                <Icon name="ios-add-circle" size={35} color={"#33c37d"} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
     );
   };
   return (
-    <SafeAreaView style={{backgroundColor: COLORS.white, flex: 1}}>
+    <SafeAreaView style={{ backgroundColor: COLORS.white, flex: 1 }}>
       <View style={style.header}>
-        <Image source={icons.back} style={{height: 28, width: 28}} onPress={props.navigation.goBack} />
-        <Text style={{fontSize: 20, fontWeight: 'bold'}}>Cart</Text>
+        <Icon name="chevron-back" size={28} onPress={() => props.navigation.goBack()} />
+        <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Cart</Text>
       </View>
       <FlatList
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{paddingBottom: 80}}
+        contentContainerStyle={{ paddingBottom: 80 }}
         data={cartItems}
-        renderItem={({item}) => <CartCard item={item} />}
-        ListFooterComponentStyle={{paddingHorizontal: 20, marginTop: 20}}
+        renderItem={({ item }) => <CartCard item={item} />}
+        ListFooterComponentStyle={{ paddingHorizontal: 20, marginTop: 20 }}
         ListFooterComponent={() => (
           <View>
             <View
@@ -67,13 +108,13 @@ const Cart = (props) => {
                 justifyContent: 'space-between',
                 marginVertical: 15,
               }}>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
                 Total Price
               </Text>
-              <Text style={{fontSize: 18, fontWeight: 'bold'}}>{ rupiah(cartItems &&  cartItems.reduce((a, b) => a + (b.price * b.qty), 0))}</Text>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{rupiah(cartItems && cartItems.reduce((a, b) => a + (b.price * b.qty), 0))}</Text>
             </View>
-            <View style={{marginHorizontal: 30}}>
-              <PrimaryButton title="CHECKOUT" />
+            <View style={{ marginHorizontal: 30 }}>
+              <PrimaryButton onPress={() => checkoutItems(cartItems)} title="Order" />
             </View>
           </View>
         )}
