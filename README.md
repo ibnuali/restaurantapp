@@ -6,7 +6,6 @@ Restaurant App built with react native
 ```bash
 cd restaurantapp
 npm install
-npm run start:dev
 
 open powershell
 cd restaurantapp
